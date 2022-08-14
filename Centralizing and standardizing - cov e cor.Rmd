@@ -1,0 +1,245 @@
+---
+title: "Cov/Cor"
+author: "Victor G Alcantara"
+date: '2022-04-22'
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Covariância e correlação
+
+## 1. Centralizar e padronizar variáveis
+
+### These technics are important to compare two or more variables
+### With centralized values, we can see the distance to mean more clearly
+### With standardized values, we can compare two or more variable
+
+
+```{r}
+# 0. Packages and setup ----
+
+library(pacman)
+p_load(tidyverse,corrplot)
+
+set.seed(123) # seed of memory to reproducibility
+options(scipen = 999) # to cancel scientific notation
+# ----
+```
+
+As técnicas de centrar e padronziar variáveis são importantes na análise de covariância e correlação.
+
+A média é uma medida central de variáveis métricas. É o "centro gravitacional", que divide igualmente a distribuição em dois lados com pesos iguais.  Centrar uma variável significa redimensionar os valores em distância em relação à média (x_i - me_x). A média de uma variável centrada passa a ser como o somatório dos desvios com relação à média que, como sabemos, é sempre zero.
+
+Vamos observar isso a seguir.
+
+```{r}
+# Random data generate process with normal distribution
+x <- rnorm(n = 1000,mean=7,sd=3)
+hist(x)
+
+# Centring variable: mean = 0 ----
+me_x = mean(x)
+c_x  = x - me_x # centred variable: distances to mean
+
+sum(c_x)  # sum = 0
+mean(c_x) # mean = 0
+
+hist(c_x) # Now the center is 0
+
+# Standardazing data: sd = 1 ----
+# Standardize means compute values with distances in sd
+z_x = (x - me_x) / sd(x)
+
+hist(z_x) # now center is 0 and distances are standardized in sd
+
+mean(z_x)
+sd(z_x)
+```
+
+O interesse em ter uma variável com média zero e desvios padronizados é ter uma medida comum (desvios-padrão) para comparar com outras variáveis. Isso significa que tiramos a escala original da variável (peso,altura,reais,graus etc.) e deixamos numa escala de desvios-padrão.
+
+Vejamos um exemplo com matriz.
+
+```{r}
+# Example with matrix
+
+# First dimesion: education performance 
+x1 <- rnorm(1000,6,3) %>% abs() %>% round(1) %>% 
+      ifelse(. > 10, 10, .) # educ performance
+hist(x1)
+
+# Second dimension: mm of rain/month
+x2 <- rnorm(1000,200,35) %>% round() %>% abs()
+hist(x2)
+
+# Note that educ performance was created independent to mm rain/month
+# Concept of independence: they have no relation with each other
+
+m <- data.frame(x1,x2)
+
+# m <- matrix(data = c(x1,x2),
+#             nrow=1000,ncol = 2)
+
+# Covariance (Sjj')
+cov_x1x2 = sum( 
+  (x1 - mean(x1))*(x2-mean(x2)) # note that they covariate together
+     ) / (length(x1)-1)
+
+cov(x1,x2)
+
+# A cov de uma variável com ela mesma é a variância
+cov_x1x1 = sum( 
+  (x1 - mean(x1))*(x1-mean(x1)) # note that they covariate together
+     ) / (length(x1)-1)
+cov_x1x1
+cov(x1,x1)
+var(x1)
+
+# When Sjj' > 0 → dimensions co-vary in the same direction
+# When Sjj' < 0 → dimensions co-vary in the opposite direction
+
+var(m) # variância na diagonal / fora da diagonal é a cov
+
+```
+
+A variância (Sj^2) e a covariância (Sjj') podem ser calculadas por uma matriz variância-covariância.
+Simplesmente multiplicamos os vetores, fazendo com que Sj*Sj (variância) e Sj*Sj' (covariância).
+
+Multiplicação de matrizes
+
+*Condição de existência*: condição para multiplicar duas matrizes. Para que o produto exista, o número de colunas da primeira matriz tem que ser igual ao número de linhas da segunda matriz. Assim, para multiplicar uma matriz por ela mesma, é necessária a transposição da segunda
+
+A ordem importa na multiplicação de matrizes!
+
+```{r}
+m <- as.matrix(m)
+
+m_c = data.frame(
+  x1_c=m[,1]-mean(m[,1]),x2_c=m[,2]-mean(m[,2])
+                 )
+m_c <- as.matrix(m_c)
+
+m_var_cov = t(m_c) %*% m_c # P q deu errado?
+
+m_var_cov / (nrow(m)-1)
+
+cov(m)
+cor(m)
+
+```
+
+
+A covariância dá o sentido da relação, se positiva ou negativa, mas não mede o grau de relação/associação entre as variáveis. Para isso Pearson desenvolveu uma mensuração padronizada da covariância, que varia de -1 à 1. Em que -1 é inversamente proporcional, 1 é proporcional e 0 independentes.
+
+A correlação de Pearson é dada pela covariância dividida pelo produto dos desvios-padrão da variável j com a j'.
+
+rjj' = Sjj' / Sj*Sj'
+
+Sjj' = covariância
+Sj = desvio-padrão de j
+Sj'= desvio-padrão de j'
+
+```{r}
+cor_x = cov(x1,x2) / (sd(x1)*sd(x2))
+cor_x = round(cor_x,4)
+
+cor(x1,x2) %>% round(4)
+```
+
+Quando as variáveis são padronizadas, a covariância é igual à correlação.
+
+Por quê? Elas já estão padronizadas, logo não é necessária a padronização do Pearson.
+
+```{r}
+# Mean
+me_x1 = mean(x1)
+me_x2 = mean(x2)
+
+# Centring variables
+c_x1 = (x1 - me_x1)
+c_x2 = (x2 - me_x2)
+
+cov(c_x1,c_x2)
+cor(c_x1,c_x2)
+
+# Standard variables
+z_x1 = (x1 - me_x1) / sd(x1)
+z_x2 = (x2 - me_x2) / sd(x2)
+
+# When variables are standardized, cov and cor are equal 
+
+cov(z_x1,z_x2)
+cor(z_x1,z_x2)
+
+plot(y=x1,x=x2,
+     main= paste0("No correlation \n r = ",cor_x)
+)
+```
+
+Como as duas variáveis (performance escolar e mm de chuva por dia) foram criadas independentes uma da outra, não verificamos correlação ou padrão de dispersão.
+
+```{r}
+# Now, we will create two variables correlated!
+n = 10000
+
+income = rnorm(n,2300,700) %>% abs() # mean of household income
+hist(income)
+
+a = 2                 # intercept: performance when income = 0
+beta = 0.00182
+
+# repare que este beta esta na casa dos milésimos. Podemos ler, ao invés de variação 0.00182 no desempenho a cada 1 real de renda, que é 1.82 a cada 1000 reais em renda.
+
+e = rnorm(n,0,1.5) # random error term
+
+educ = a + beta*income + e 
+hist(educ)
+
+educ = educ %>% abs() %>%
+  ifelse(. > 10, 10, .) # educ performance
+
+plot(income,educ,
+     main= paste0("Low positive correlation \n r = ",
+                  round(cor(educ,income),4)
+                  ),
+     ylab = "educ performance"
+     )
+abline(lm(educ ~ income),col="blue")
+
+cov(educ,income)
+cor(educ,income)
+
+me_inc = mean(income)
+me_edu = mean(educ)
+
+# Centring variables
+c_inc = income - me_inc
+c_edu = educ - me_edu
+
+# Standard variables
+z_inc = (income - me_inc) / sd(income)
+z_edu = (educ - me_edu) / sd(educ)
+
+cov(z_inc,z_edu)
+cor(z_inc,z_edu)
+
+```
+
+Correlation plot (_corrplot_ package)
+
+Este pacote oferece opções elegantes de representar a matriz de covariância e correlação. Nele há a opção de indicar as correlações e desenhar as elipses para reconhecimento do padrão de dispersão.
+
+
+```{r}
+m <- matrix(c(educ,income),nrow = 1000,ncol=2)
+
+correlation <- cor(m)
+
+corrplot.mixed(correlation,
+               order="hclust",
+               upper = "ellipse",
+               lower.col = "black",number.cex=0.7,tl.cex=0.8,tl.col="black",
+               outline=T)
+```
+
