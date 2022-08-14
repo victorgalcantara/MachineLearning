@@ -1,6 +1,6 @@
 # MachineLearning
  
-Welcome! This is some materials to study some techniques of machine learning applied in social sciences.
+Welcome! This is some materials to study techniques of machine learning applied in social sciences.
 
 Before all, I will register some important materials and initiatives in computational social sciences as [Banyuwangi](https://github.com/bwi45/Machine-Learning-and-Data-Science-in-Politics) did about Political Science.
 
