@@ -1,4 +1,4 @@
-# MachineLearning
+# Machine Learning
  
 Welcome! This is some materials to study techniques of machine learning applied in social sciences.
 
